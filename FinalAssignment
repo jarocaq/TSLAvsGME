@@ -1,0 +1,81 @@
+!pip install yfinance==0.1.67
+!mamba install bs4==4.10.0 -y
+!pip install nbformat==4.2.0
+
+import yfinance as yf
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+Question 1: Use yfinance to Extract Stock Data
+tesla = yf.Ticker("TSLA")
+tesla_data = tesla.history(period = "max")
+tesla_data.head()
+tesla_data.reset_index(inplace = True)
+tesla_data.head()
+
+#Question 2: Use Webscraping to Extract Tesla Revenue Data
+url = "https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-PY0220EN-SkillsNetwork/labs/project/revenue.htm"
+html_data = requests.get(url).text
+soup = BeautifulSoup(html_data, "html.parser")
+html_tables = soup.find_all("table")
+table = None
+for index, table in enumerate(html_tables):
+    if "Tesla Quarterly Revenue" in str(table):
+        html_table = table
+          
+
+tesla_revenue = pd.DataFrame(columns = ["Date", "Revenue"])
+
+for row in html_table.tbody.find_all("tr"):
+    col = row.find_all("td")
+    if col != []:
+        date = str(col[0].string)
+        revenue = str(col[1].string)
+        tesla_revenue = tesla_revenue.append({"Date":date, "Revenue":revenue}, ignore_index=True)
+
+tesla_revenue["Revenue"] = tesla_revenue['Revenue'].str.replace(',|\$',"")
+tesla_revenue.dropna(inplace=True)
+
+tesla_revenue = tesla_revenue[tesla_revenue['Revenue'] != ""]
+tesla_revenue.tail()
+
+#Question 3: Use yfinance to Extract Stock Data
+gme  = yf.Ticker("GME")
+gme_data = gme.history(period = 'max')
+gme_data.head()
+gme_data.reset_index(inplace = True)
+gme_data.head()
+
+#Question 4: Use Webscraping to Extract GME Revenue Data
+url = 'https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-PY0220EN-SkillsNetwork/labs/project/stock.html.'
+html_data = requests.get(url).text
+soup = BeautifulSoup(html_data, "html.parser")
+html_tables = soup.find_all("table")
+table = None
+for index, table in enumerate(html_tables):
+    if "GameStop Quarterly Revenue" in str(table):
+        html_table = table
+          
+
+gme_revenue = pd.DataFrame(columns = ["Date", "Revenue"])
+
+for row in html_table.tbody.find_all("tr"):
+    col = row.find_all("td")
+    if col != []:
+        date = str(col[0].string)
+        revenue = str(col[1].string)
+        gme_revenue = gme_revenue.append({"Date":date, "Revenue":revenue}, ignore_index=True)
+        
+gme_revenue.dropna(inplace=True)
+gme_revenue = gme_revenue[gme_revenue['Revenue'] != "None"]
+gme_revenue.head()
+gme_revenue.tail()
+
+#Question 5: Plot Tesla Stock Graph
+make_graph(tesla_data, tesla_revenue, 'Tesla')
+
+##Question 5: Plot GME Stock Graph
+make_graph(gme_data, gme_revenue, 'GameStop')
